@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highway 50-Box Math Practice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        table { border-collapse: collapse; margin: 0 auto; background: white; }
+        th, td { 
+            border: 1.5px solid #374151; 
+            width: 56px; 
+            height: 52px; 
+            text-align: center; 
+            font-size: 1.15rem; 
+            position: relative;
+            transition: background-color 0.12s ease;
+        }
+        @media (max-width: 640px) {
+            th, td { width: 42px; height: 44px; font-size: 0.95rem; }
+        }
+        th { background-color: #f3f4f6; font-weight: bold; color: #1f2937; user-select: none; }
+        th.active-header {
+            background-color: #fef08a !important;
+            color: #111827 !important;
+            box-shadow: inset 0 0 0 2px #eab308;
+        }
+        td.guide-cell {
+            background-color: #f8fafc;
+        }
+        input[type="number"] { 
+            width: 100%; height: 100%; border: none; text-align: center; 
+            font-size: 1.2rem; outline: none; background: transparent; font-weight: 600;
+            color: #111827;
+        }
+        input[type="number"]:focus { background-color: #dbeafe; }
+        .correct { color: #1d4ed8 !important; background-color: #eff6ff !important; font-weight: bold; } 
+        .incorrect { color: #dc2626 !important; background-color: #fee2e2 !important; font-weight: bold; } 
+        .ans-hint {
+            position: absolute;
+            bottom: 1px;
+            right: 3px;
+            font-size: 0.68rem;
+            line-height: 1;
+            font-weight: 800;
+            color: #15803d;
+            background: #dcfce7;
+            padding: 1px 3px;
+            border-radius: 3px;
+            pointer-events: none;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+</head>
+<body class="bg-slate-50 flex flex-col items-center py-6 px-3 min-h-screen">
+
+    <!-- Header -->
+    <div class="w-full max-w-2xl flex items-center justify-between mb-2">
+        <div class="w-10"></div>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-gray-800 text-center">Highway 50-Box Math Practice</h1>
+        <button id="soundToggleBtn" title="Toggle Sound On/Off" class="w-10 h-10 rounded-full bg-white border border-gray-300 shadow-sm flex items-center justify-center text-lg hover:bg-gray-100 transition">
+            🔊
+        </button>
+    </div>
+
+    <p class="text-gray-600 mb-5 text-sm text-center max-w-xl">
+        Enter the participant's name and grade, select an operation and difficulty level, then click <strong>'Start'</strong>.<br>
+        Complete all 50 boxes and click <strong>'Answer'</strong> to check your score. Results are automatically saved to Google Sheets.
+    </p>
+
+    <!-- Participant Details (Name & Grade) -->
+    <div class="w-full max-w-xl bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+        <div class="flex-1">
+            <label for="studentName" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1">
+                Participant Name <span class="text-red-500">*</span>
+            </label>
+            <input 
+                type="text" 
+                id="studentName" 
+                placeholder="Enter full name" 
+                autocomplete="name"
+                class="w-full px-3.5 py-2 rounded-lg border border-gray-300 text-gray-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            />
+        </div>
+        <div class="sm:w-44">
+            <label for="studentGrade" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1">
+                Grade <span class="text-red-500">*</span>
+            </label>
+            <select 
+                id="studentGrade" 
+                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-gray-800 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            >
+                <option value="">-- Select Grade --</option>
+                <option value="Grade 1">Grade 1</option>
+                <option value="Grade 2">Grade 2</option>
+                <option value="Grade 3">Grade 3</option>
+                <option value="Grade 4">Grade 4</option>
+                <option value="Grade 5">Grade 5</option>
+                <option value="Grade 6">Grade 6</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Mode Selector Buttons (4 Operations) -->
+    <div class="mb-4 flex flex-wrap gap-2.5 justify-center items-center">
+        <button id="modeAddBtn" class="px-4 py-2.5 rounded-lg font-bold shadow-sm transition duration-200 border-2 bg-blue-600 text-white border-blue-600">
+            &plus; Addition
+        </button>
+        <button id="modeSubBtn" class="px-4 py-2.5 rounded-lg font-bold shadow-sm transition duration-200 border-2 bg-white text-gray-700 border-gray-300 hover:bg-gray-100">
+            &minus; Subtraction
+        </button>
+        <button id="modeMulBtn" class="px-4 py-2.5 rounded-lg font-bold shadow-sm transition duration-200 border-2 bg-white text-gray-700 border-gray-300 hover:bg-gray-100">
+            &times; Multiplication
+        </button>
+        <button id="modeDivBtn" class="px-4 py-2.5 rounded-lg font-bold shadow-sm transition duration-200 border-2 bg-white text-gray-700 border-gray-300 hover:bg-gray-100">
+            &divide; Division
+        </button>
+    </div>
+
+    <!-- Difficulty Level Selector -->
+    <div class="mb-5 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-200 text-sm">
+        <span class="text-gray-500 font-medium pl-1">Level:</span>
+        <button id="diffEasyBtn" class="px-3 py-1 rounded-full font-semibold transition text-gray-600 hover:bg-gray-100">
+            Easy (1–5)
+        </button>
+        <button id="diffNormalBtn" class="px-3 py-1 rounded-full font-semibold transition bg-gray-800 text-white">
+            Normal (1–10)
+        </button>
+    </div>
+
+    <!-- Timer, Progress & Action Buttons -->
+    <div class="mb-4 flex flex-wrap gap-3 justify-center items-center">
+        <button id="startBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-7 rounded-lg shadow transition duration-200">
+            Start
+        </button>
+        <div class="text-lg font-mono bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 text-gray-700 font-bold">
+            Time: <span id="timerDisplay" class="text-gray-900">00:00</span>
+        </div>
+        <div class="text-sm font-semibold bg-white px-3.5 py-2.5 rounded-lg shadow-sm border border-gray-200 text-gray-600">
+            Filled: <span id="progressDisplay" class="text-blue-600 font-bold">0</span> / 50
+        </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="shadow-lg rounded-lg overflow-x-auto max-w-full mt-1 border-2 border-gray-300 bg-white p-2">
+        <table id="mathTable"></table>
+    </div>
+
+    <!-- Submit Answer Button -->
+    <div class="mt-6 flex gap-3 justify-center">
+        <button id="answerBtn" class="bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-3 px-12 rounded-lg shadow-md transition duration-200 hidden">
+            Answer
+        </button>
+    </div>
+
+    <!-- Result Display -->
+    <div id="resultMessage" class="mt-6 text-xl font-bold text-center bg-white p-6 rounded-xl shadow-md border-2 border-green-200 hidden w-full max-w-md"></div>
+
+    <!-- Local Session History -->
+    <div id="historySection" class="mt-8 w-full max-w-xl bg-white rounded-xl shadow-sm border border-gray-200 p-4 hidden">
+        <div class="flex justify-between items-center mb-2 border-b pb-2">
+            <h2 class="text-sm font-bold text-gray-700">Recent Practice History (This Device)</h2>
+            <button id="clearHistoryBtn" class="text-xs text-gray-400 hover:text-red-500">Clear</button>
+        </div>
+        <div id="historyList" class="text-xs text-gray-600 space-y-1.5 max-h-44 overflow-y-auto"></div>
+    </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbzbqWBbsXyCf9fG8JmOxuvoGthuPA_V0T3A41PwE_3KSHf1If5xBXe6X1bGzeJ4EU_KUA/exec';
+
+        // Sound synthesizer (Web Audio API - offline friendly)
+        let soundEnabled = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTone(freq, type = 'sine', duration = 0.08, volume = 0.08) {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function playSuccessSound() {
+            if (!soundEnabled) return;
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                setTimeout(() => playTone(freq, 'triangle', 0.18, 0.12), idx * 90);
+            });
+        }
+
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggleBtn.textContent = soundEnabled ? '🔊' : '🔇';
+        });
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            let currentIndex = arr.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [arr[currentIndex], arr[randomIndex]] = [arr[randomIndex], arr[currentIndex]];
+            }
+            return arr;
+        }
+
+        const studentNameInput = document.getElementById('studentName');
+        const studentGradeSelect = document.getElementById('studentGrade');
+        const table = document.getElementById('mathTable');
+        const startBtn = document.getElementById('startBtn');
+        const answerBtn = document.getElementById('answerBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const progressDisplay = document.getElementById('progressDisplay');
+        const resultMessage = document.getElementById('resultMessage');
+
+        // Clear validation highlight when user types/selects
+        studentNameInput.addEventListener('input', () => {
+            studentNameInput.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+        });
+        studentGradeSelect.addEventListener('change', () => {
+            studentGradeSelect.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+        });
+
+        const modeButtons = {
+            addition: document.getElementById('modeAddBtn'),
+            subtraction: document.getElementById('modeSubBtn'),
+            multiplication: document.getElementById('modeMulBtn'),
+            division: document.getElementById('modeDivBtn')
+        };
+
+        const modeConfig = {
+            addition: {
+                label: 'Addition',
+                symbol: '&plus;',
+                activeClass: 'bg-blue-600 text-white border-blue-600',
+                btnClass: 'bg-blue-600 hover:bg-blue-700',
+                cornerClass: 'text-blue-600 text-2xl font-black'
+            },
+            subtraction: {
+                label: 'Subtraction',
+                symbol: '&minus;',
+                activeClass: 'bg-red-600 text-white border-red-600',
+                btnClass: 'bg-red-600 hover:bg-red-700',
+                cornerClass: 'text-red-600 text-2xl font-black'
+            },
+            multiplication: {
+                label: 'Multiplication',
+                symbol: '&times;',
+                activeClass: 'bg-purple-600 text-white border-purple-600',
+                btnClass: 'bg-purple-600 hover:bg-purple-700',
+                cornerClass: 'text-purple-600 text-2xl font-black'
+            },
+            division: {
+                label: 'Division',
+                symbol: '&divide;',
+                activeClass: 'bg-amber-600 text-white border-amber-600',
+                btnClass: 'bg-amber-600 hover:bg-amber-700',
+                cornerClass: 'text-amber-600 text-2xl font-black'
+            }
+        };
+
+        const diffEasyBtn = document.getElementById('diffEasyBtn');
+        const diffNormalBtn = document.getElementById('diffNormalBtn');
+
+        let currentMode = 'addition'; // 'addition' | 'subtraction' | 'multiplication' | 'division'
+        let difficulty = 'normal';    // 'easy' | 'normal'
+        let topNumbers = [];
+        let leftNumbers = [];
+        let startTime;
+        let timerInterval;
+        let isPlaying = false;
+        const totalBoxes = 50;
+
+        const baseModeBtnClass = "px-4 py-2.5 rounded-lg font-bold shadow-sm transition duration-200 border-2 bg-white text-gray-700 border-gray-300 hover:bg-gray-100";
+
+        function setParticipantFieldsDisabled(disabled) {
+            studentNameInput.disabled = disabled;
+            studentGradeSelect.disabled = disabled;
+        }
+
+        function setMode(mode) {
+            if (isPlaying) {
+                if (!confirm("Stop the current practice session and switch operations?")) return;
+                stopGameReset();
+            }
+            currentMode = mode;
+
+            Object.keys(modeButtons).forEach(key => {
+                if (key === currentMode) {
+                    modeButtons[key].className = `px-4 py-2.5 rounded-lg font-bold shadow-sm transition duration-200 border-2 ${modeConfig[key].activeClass}`;
+                } else {
+                    modeButtons[key].className = baseModeBtnClass;
+                }
+            });
+
+            startBtn.className = `${modeConfig[currentMode].btnClass} text-white font-bold py-2.5 px-7 rounded-lg shadow transition duration-200`;
+            playTone(440, 'sine', 0.05, 0.05);
+            generateGrid();
+        }
+
+        function setDifficulty(level) {
+            if (isPlaying) {
+                if (!confirm("Stop the current practice session and change the difficulty level?")) return;
+                stopGameReset();
+            }
+            difficulty = level;
+            if (difficulty === 'easy') {
+                diffEasyBtn.className = "px-3 py-1 rounded-full font-semibold transition bg-gray-800 text-white";
+                diffNormalBtn.className = "px-3 py-1 rounded-full font-semibold transition text-gray-600 hover:bg-gray-100";
+            } else {
+                diffNormalBtn.className = "px-3 py-1 rounded-full font-semibold transition bg-gray-800 text-white";
+                diffEasyBtn.className = "px-3 py-1 rounded-full font-semibold transition text-gray-600 hover:bg-gray-100";
+            }
+            playTone(520, 'sine', 0.05, 0.05);
+            generateGrid();
+        }
+
+        function stopGameReset() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            timerDisplay.textContent = "00:00";
+            answerBtn.classList.add('hidden');
+            startBtn.textContent = "Start";
+            setParticipantFieldsDisabled(false);
+        }
+
+        modeButtons.addition.addEventListener('click', () => setMode('addition'));
+        modeButtons.subtraction.addEventListener('click', () => setMode('subtraction'));
+        modeButtons.multiplication.addEventListener('click', () => setMode('multiplication'));
+        modeButtons.division.addEventListener('click', () => setMode('division'));
+
+        diffEasyBtn.addEventListener('click', () => setDifficulty('easy'));
+        diffNormalBtn.addEventListener('click', () => setDifficulty('normal'));
+
+        // Curated whole-number division sets so every single cell (top / left) is an exact integer
+        function generateDivisionNumbers(level) {
+            const easyPools = [
+                { divisors: [2, 3, 4, 6, 12], lcm: 12 },
+                { divisors: [1, 2, 3, 4, 6], lcm: 12 },
+                { divisors: [2, 4, 5, 10, 20], lcm: 20 },
+                { divisors: [1, 2, 4, 5, 10], lcm: 20 }
+            ];
+            const normalPools = [
+                ...easyPools,
+                { divisors: [1, 2, 3, 6, 9], lcm: 18 },
+                { divisors: [2, 3, 4, 6, 8], lcm: 24 },
+                { divisors: [2, 3, 5, 6, 10], lcm: 30 }
+            ];
+            const poolList = level === 'easy' ? easyPools : normalPools;
+            const chosen = poolList[Math.floor(Math.random() * poolList.length)];
+            const multiples = [];
+            for (let i = 1; i <= 10; i++) {
+                multiples.push(chosen.lcm * i);
+            }
+            return {
+                top: shuffleArray(multiples),
+                left: shuffleArray(chosen.divisors)
+            };
+        }
+
+        function generateGrid() {
+            table.innerHTML = '';
+            progressDisplay.textContent = '0';
+
+            if (currentMode === 'addition') {
+                if (difficulty === 'easy') {
+                    topNumbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+                    leftNumbers = shuffleArray([1, 2, 3, 4, 5]);
+                } else {
+                    topNumbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+                    leftNumbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).slice(0, 5);
+                }
+            } else if (currentMode === 'subtraction') {
+                if (difficulty === 'easy') {
+                    topNumbers = shuffleArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+                    leftNumbers = shuffleArray([1, 2, 3, 4, 5]);
+                } else {
+                    topNumbers = shuffleArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+                    leftNumbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 5);
+                }
+            } else if (currentMode === 'multiplication') {
+                if (difficulty === 'easy') {
+                    topNumbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+                    leftNumbers = shuffleArray([1, 2, 3, 4, 5]);
+                } else {
+                    topNumbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+                    leftNumbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).slice(0, 5);
+                }
+            } else if (currentMode === 'division') {
+                const divSet = generateDivisionNumbers(difficulty);
+                topNumbers = divSet.top;
+                leftNumbers = divSet.left;
+            }
+
+            // Build Header Row
+            let headerRow = document.createElement('tr');
+            let cornerTh = document.createElement('th');
+            cornerTh.innerHTML = modeConfig[currentMode].symbol;
+            cornerTh.className = modeConfig[currentMode].cornerClass;
+            headerRow.appendChild(cornerTh);
+
+            topNumbers.forEach((num, cIdx) => {
+                let th = document.createElement('th');
+                th.textContent = num;
+                th.id = `top-th-${cIdx}`;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            let tabindexCounter = 1;
+
+            for (let r = 0; r < 5; r++) {
+                let row = document.createElement('tr');
+                let rowHeader = document.createElement('th');
+                rowHeader.textContent = leftNumbers[r];
+                rowHeader.id = `left-th-${r}`;
+                row.appendChild(rowHeader);
+
+                for (let c = 0; c < 10; c++) {
+                    let td = document.createElement('td');
+                    td.id = `cell-${r}-${c}`;
+                    let input = document.createElement('input');
+                    input.type = 'number';
+                    input.inputMode = 'numeric';
+                    input.dataset.row = r;
+                    input.dataset.col = c;
+                    input.disabled = true;
+                    input.tabIndex = tabindexCounter++;
+
+                    input.addEventListener('focus', () => highlightCrosshair(r, c));
+                    input.addEventListener('input', updateProgress);
+
+                    input.addEventListener('keydown', function(e) {
+                        const rowIdx = parseInt(this.dataset.row);
+                        const colIdx = parseInt(this.dataset.col);
+
+                        if (e.key === 'Tab') {
+                            e.preventDefault();
+                            if (e.shiftKey) {
+                                moveToPreviousInput(this);
+                            } else {
+                                moveToNextInput(this);
+                            }
+                        } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            moveToNextInput(this);
+                        } else if (e.key === 'ArrowRight') {
+                            e.preventDefault();
+                            focusCell(rowIdx, (colIdx + 1) % 10);
+                        } else if (e.key === 'ArrowLeft') {
+                            e.preventDefault();
+                            focusCell(rowIdx, (colIdx + 9) % 10);
+                        } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            focusCell((rowIdx + 1) % 5, colIdx);
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            focusCell((rowIdx + 4) % 5, colIdx);
+                        }
+                    });
+
+                    td.appendChild(input);
+                    row.appendChild(td);
+                }
+                table.appendChild(row);
+            }
+        }
+
+        function highlightCrosshair(r, c) {
+            document.querySelectorAll('th.active-header').forEach(el => el.classList.remove('active-header'));
+            document.querySelectorAll('td.guide-cell').forEach(el => el.classList.remove('guide-cell'));
+
+            const topTh = document.getElementById(`top-th-${c}`);
+            const leftTh = document.getElementById(`left-th-${r}`);
+            if (topTh) topTh.classList.add('active-header');
+            if (leftTh) leftTh.classList.add('active-header');
+
+            for (let i = 0; i < c; i++) {
+                const cell = document.getElementById(`cell-${r}-${i}`);
+                if (cell) cell.classList.add('guide-cell');
+            }
+            for (let j = 0; j < r; j++) {
+                const cell = document.getElementById(`cell-${j}-${c}`);
+                if (cell) cell.classList.add('guide-cell');
+            }
+        }
+
+        function clearCrosshair() {
+            document.querySelectorAll('th.active-header').forEach(el => el.classList.remove('active-header'));
+            document.querySelectorAll('td.guide-cell').forEach(el => el.classList.remove('guide-cell'));
+        }
+
+        function focusCell(r, c) {
+            const target = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+            if (target && !target.disabled) target.focus();
+        }
+
+        function updateProgress() {
+            const inputs = document.querySelectorAll('input[type="number"]');
+            let filled = 0;
+            inputs.forEach(inp => {
+                if (inp.value.trim() !== '') filled++;
+            });
+            progressDisplay.textContent = filled;
+        }
+
+        function updateTimer() {
+            const currentTime = new Date().getTime();
+            const elapsedTime = currentTime - startTime;
+            const minutes = Math.floor(elapsedTime / 60000);
+            const seconds = Math.floor((elapsedTime % 60000) / 1000);
+            timerDisplay.textContent = String(minutes).padStart(2, '0') + ":" + String(seconds).padStart(2, '0');
+        }
+
+        function moveToNextInput(currentInput) {
+            const inputs = Array.from(document.querySelectorAll('input[type="number"]'));
+            const currentIndex = inputs.indexOf(currentInput);
+            let nextIndex = (currentIndex + 1) % inputs.length;
+            inputs[nextIndex].focus();
+        }
+
+        function moveToPreviousInput(currentInput) {
+            const inputs = Array.from(document.querySelectorAll('input[type="number"]'));
+            const currentIndex = inputs.indexOf(currentInput);
+            let prevIndex = (currentIndex - 1 + inputs.length) % inputs.length;
+            inputs[prevIndex].focus();
+        }
+
+        function calculateExpected(r, c) {
+            if (currentMode === 'addition') {
+                return leftNumbers[r] + topNumbers[c];
+            } else if (currentMode === 'subtraction') {
+                return topNumbers[c] - leftNumbers[r];
+            } else if (currentMode === 'multiplication') {
+                return leftNumbers[r] * topNumbers[c];
+            } else {
+                return topNumbers[c] / leftNumbers[r];
+            }
+        }
+
+        // Local History Management
+        function saveLocalSession(record) {
+            try {
+                const key = 'highway_50box_history';
+                const existing = JSON.parse(localStorage.getItem(key) || '[]');
+                existing.unshift(record);
+                localStorage.setItem(key, JSON.stringify(existing.slice(0, 20)));
+                renderHistory();
+            } catch (e) {}
+        }
+
+        function renderHistory() {
+            try {
+                const key = 'highway_50box_history';
+                const existing = JSON.parse(localStorage.getItem(key) || '[]');
+                const section = document.getElementById('historySection');
+                const list = document.getElementById('historyList');
+                if (existing.length === 0) {
+                    section.classList.add('hidden');
+                    return;
+                }
+                section.classList.remove('hidden');
+                list.innerHTML = existing.map(item => `
+                    <div class="flex flex-wrap justify-between items-center gap-2 bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
+                        <span class="font-bold text-gray-800">${item.name} <span class="text-blue-600 font-semibold">(${item.grade})</span></span>
+                        <span class="text-gray-700">${item.type} <span class="text-gray-400">(${item.level})</span></span>
+                        <span>Time: <strong class="text-blue-700">${item.duration}</strong></span>
+                        <span>Score: <strong class="text-green-700">${item.correct}/50 (${item.percentage})</strong></span>
+                    </div>
+                `).join('');
+            } catch (e) {}
+        }
+
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+            localStorage.removeItem('highway_50box_history');
+            renderHistory();
+        });
+
+        answerBtn.addEventListener('click', () => {
+            if (!isPlaying) return;
+
+            const inputs = document.querySelectorAll('input[type="number"]');
+            let emptyCount = 0;
+            inputs.forEach(inp => {
+                if (inp.value.trim() === '') emptyCount++;
+            });
+
+            if (emptyCount > 0) {
+                const proceed = confirm(`There are still ${emptyCount} empty box(es). Do you want to check your answers now?`);
+                if (!proceed) return;
+            }
+
+            isPlaying = false;
+            clearInterval(timerInterval);
+            clearCrosshair();
+            setParticipantFieldsDisabled(false);
+
+            answerBtn.textContent = "Submitting data...";
+            answerBtn.disabled = true;
+
+            let correctCount = 0;
+
+            inputs.forEach(input => {
+                input.disabled = true;
+                const r = parseInt(input.dataset.row);
+                const c = parseInt(input.dataset.col);
+                const expectedAnswer = calculateExpected(r, c);
+                const rawVal = input.value.trim();
+                const typedValue = rawVal === '' ? NaN : parseInt(rawVal, 10);
+
+                if (typedValue === expectedAnswer) {
+                    input.classList.add('correct');
+                    correctCount++;
+                } else {
+                    input.classList.add('incorrect');
+                    const hint = document.createElement('span');
+                    hint.className = 'ans-hint';
+                    hint.textContent = expectedAnswer;
+                    hint.title = `Correct answer: ${expectedAnswer}`;
+                    input.parentElement.appendChild(hint);
+                }
+            });
+
+            const percentage = Math.round((correctCount / totalBoxes) * 100);
+            const finalTime = timerDisplay.textContent;
+
+            if (percentage >= 80) {
+                playSuccessSound();
+            } else {
+                playTone(330, 'sine', 0.2, 0.1);
+            }
+
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-GB');
+            const timeStr = today.toLocaleTimeString('en-US');
+            const studentName = studentNameInput.value.trim();
+            const studentGrade = studentGradeSelect.value;
+            const typeLabel = modeConfig[currentMode].label;
+            const levelLabel = difficulty === 'easy' ? 'Easy' : 'Normal';
+
+            saveLocalSession({
+                name: studentName,
+                grade: studentGrade,
+                type: typeLabel,
+                level: levelLabel,
+                duration: finalTime,
+                correct: correctCount,
+                percentage: percentage + '%'
+            });
+
+            const payload = new URLSearchParams();
+            payload.append('date', dateStr);
+            payload.append('time', timeStr);
+            payload.append('name', studentName);
+            payload.append('grade', studentGrade);
+            payload.append('type', typeLabel);
+            payload.append('duration', finalTime);
+            payload.append('correct', correctCount);
+            payload.append('percentage', percentage + '%');
+
+            const summaryHTML = `
+                <div class="text-base text-gray-700 mb-1">Participant: <span class="font-bold text-gray-900">${studentName}</span> <span class="text-blue-700 font-semibold">(${studentGrade})</span></div>
+                <div class="text-base text-gray-600 mb-2">Operation: <span class="font-bold text-gray-800">${typeLabel}</span> (${levelLabel})</div>
+                <div class="text-2xl text-blue-700 mb-2">Time Taken: <span class="text-black font-mono">${finalTime}</span></div>
+                <div class="text-xl text-gray-700 mb-2">Correct Answers: <span class="font-bold">${correctCount}</span> / 50</div>
+                <div class="text-3xl ${percentage >= 80 ? 'text-green-600' : 'text-amber-600'} mt-2">Score: ${percentage}%</div>
+                ${correctCount < 50 ? '<p class="text-xs text-gray-500 mt-3 font-normal">* Correct answers are shown in green at the bottom-right corner of red boxes.</p>' : ''}
+            `;
+
+            fetch(scriptURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: payload
+            })
+            .then(response => {
+                resultMessage.innerHTML = `
+                    <div class="text-lg text-green-700 font-bold mb-3">Results successfully saved to Google Sheets!</div>
+                    ${summaryHTML}
+                `;
+                resultMessage.classList.remove('hidden');
+                answerBtn.classList.add('hidden');
+                answerBtn.disabled = false;
+                startBtn.textContent = "Start New Practice";
+                answerBtn.textContent = "Answer";
+            })
+            .catch(error => {
+                resultMessage.innerHTML = `
+                    <div class="text-base text-red-600 font-bold mb-3">Error saving data. Please check your internet connection.</div>
+                    ${summaryHTML}
+                `;
+                resultMessage.classList.remove('hidden');
+                answerBtn.classList.add('hidden');
+                answerBtn.disabled = false;
+                startBtn.textContent = "Start New Practice";
+                answerBtn.textContent = "Answer";
+            });
+        });
+
+        startBtn.addEventListener('click', () => {
+            const studentName = studentNameInput.value.trim();
+            const studentGrade = studentGradeSelect.value;
+
+            if (!studentName) {
+                studentNameInput.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+                alert("Please enter the participant's name before starting.");
+                studentNameInput.focus();
+                return;
+            }
+
+            if (!studentGrade) {
+                studentGradeSelect.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+                alert("Please select a grade (Grade 1 to Grade 6) before starting.");
+                studentGradeSelect.focus();
+                return;
+            }
+
+            playTone(660, 'sine', 0.08, 0.08);
+            setParticipantFieldsDisabled(true);
+            generateGrid();
+            const inputs = document.querySelectorAll('input[type="number"]');
+            inputs.forEach(input => {
+                input.disabled = false;
+                input.value = '';
+                input.classList.remove('correct', 'incorrect');
+            });
+            resultMessage.classList.add('hidden');
+            answerBtn.classList.remove('hidden');
+            answerBtn.disabled = false;
+            timerDisplay.textContent = "00:00";
+            startTime = new Date().getTime();
+            isPlaying = true;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+            startBtn.textContent = "Restart";
+            if (inputs.length > 0) {
+                inputs[0].focus();
+            }
+        });
+
+        // Initial render
+        generateGrid();
+        renderHistory();
+    </script>
+</body>
+</html>
